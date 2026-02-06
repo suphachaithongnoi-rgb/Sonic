@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บทที่ 2: องค์ประกอบของสื่อดิจิทัล </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        .hero-bg {
+            background: linear-gradient(-45deg, #4f46e5, #7c3aed, #2563eb, #0891b2);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .animated-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .quiz-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            z-index: 1000;
+            backdrop-filter: blur(12px);
+        }
+        .quiz-option {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #f1f5f9;
+        }
+        .quiz-option.selected {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+            transform: translateX(8px);
+            font-weight: bold;
+        }
+        .progress-bar {
+            height: 4px;
+            background: linear-gradient(to right, #4f46e5, #06b6d4);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 101;
+            transition: width 0.1s;
+        }
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .sound-bar {
+            width: 3px;
+            height: 12px;
+            background-color: #4f46e5;
+            border-radius: 10px;
+            display: none;
+        }
+        .is-reading .sound-bar {
+            display: block;
+            animation: sound-wave 1s ease-in-out infinite;
+        }
+        .is-reading .sound-bar:nth-child(2) { animation-delay: 0.2s; }
+        .is-reading .sound-bar:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes sound-wave {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+        }
+        .is-reading.glass-btn {
+            background: rgba(238, 242, 255, 0.95);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(79, 70, 229, 0.2);
+        }
+
+        #custom-alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { transform: translate(-50%, -100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-indigo-600 font-bold animate-pulse">กำลังกู้คืนเนื้อหา...</p>
+        </div>
+    </div>
+
+    <!-- Floating Audio Controller (Fixed bottom-left) -->
+    <div class="fixed bottom-8 left-8 z-50">
+        <button id="tts-btn" class="glass-btn group flex items-center space-x-4 p-2 pr-6 rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl" title="อ่านเนื้อหา">
+            <div class="relative">
+                <div id="tts-play-bg" class="bg-indigo-600 p-4 rounded-xl text-white shadow-lg group-hover:bg-indigo-700 transition-colors">
+                    <i data-feather="volume-2" id="tts-icon" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="flex flex-col items-start text-left">
+                <div class="flex items-center space-x-1.5 mb-0.5">
+                    <span id="tts-label" class="font-black text-[10px] uppercase tracking-widest text-indigo-600">Smart Voice</span>
+                    <div class="flex items-end space-x-0.5 h-4 w-6 ml-1">
+                        <div class="sound-bar"></div>
+                        <div class="sound-bar"></div>
+                        <div class="sound-bar"></div>
+                    </div>
+                </div>
+                <span id="tts-status" class="font-bold text-sm text-slate-700">ฟังเนื้อหา</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- Custom Alert Box -->
+    <div id="custom-alert" class="bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center space-x-3">
+        <i data-feather="alert-circle" class="w-5 h-5"></i>
+        <span id="alert-text"></span>
+    </div>
+
+    <div class="progress-bar" id="reading-progress" style="width: 0%"></div>
+
+    <!-- Modals -->
+    <div id="quiz-modal" class="quiz-modal overflow-y-auto py-10 px-4">
+        <div class="bg-white max-w-4xl mx-auto rounded-[2.5rem] shadow-2xl p-6 md:p-12 relative my-4">
+            <button onclick="closeQuiz()" class="absolute top-6 right-6 p-3 rounded-full hover:bg-slate-100 transition-colors text-slate-400 hover:text-indigo-600">
+                <i data-feather="x"></i>
+            </button>
+            <div id="quiz-header" class="mb-10">
+                <span id="quiz-badge" class="inline-block px-4 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold uppercase mb-4 tracking-widest">Assessment</span>
+                <h2 id="quiz-title" class="text-3xl md:text-4xl font-black mb-3 text-slate-900"></h2>
+                <p id="quiz-desc" class="text-slate-500 text-lg"></p>
+            </div>
+            <div id="quiz-content" class="space-y-12"></div>
+            <div class="mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div id="score-display" class="hidden text-4xl font-black text-indigo-600 order-2 md:order-1 animate-bounce"></div>
+                <button id="submit-btn" onclick="checkQuiz()" class="w-full md:w-auto bg-indigo-600 text-white px-12 py-5 rounded-2xl font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all active:scale-95 order-1 md:order-2 text-lg">
+                    ส่งคำตอบทั้งหมด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-slate-100">
+        <div class="container mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center space-x-3 text-2xl font-black text-indigo-600">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white">
+                    <i data-feather="monitor"></i>
+                </div>
+                <span class="tracking-tight">Website</span>
+            </div>
+            <div class="hidden lg:flex items-center space-x-10 text-sm font-bold uppercase tracking-widest">
+                <a href="index.html" class="text-slate-500 hover:text-indigo-600 transition-colors">หน้าแรก</a>
+                <a href="index.html#lessons" class="text-indigo-600">บทเรียน</a>
+                <a href="prepared_by.html" class="text-slate-500 hover:text-indigo-600 transition-colors">เกี่ยวกับเรา</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="hero-bg text-white py-24 md:py-36 px-6 overflow-hidden relative text-center">
+        <div class="container mx-auto relative z-10">
+            <span class="inline-block px-8 py-3 bg-white/10 backdrop-blur-lg rounded-full text-lg md:text-xl font-black tracking-wide mb-8 border border-white/20 shadow-xl">บทที่ 2</span>
+            <h1 class="text-5xl md:text-8xl font-black leading-tight mb-8">องค์ประกอบของ<br><span class="text-cyan-300">สื่อดิจิทัล</span></h1>
+            <p class="text-lg md:text-2xl text-indigo-50 max-w-3xl mx-auto font-medium leading-relaxed opacity-90">ทำความเข้าใจ 5 องค์ประกอบพื้นฐานที่ช่วยสร้างสรรค์สื่อดิจิทัลให้มีประสิทธิภาพและน่าสนใจในระดับมืออาชีพ</p>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-slate-50 to-transparent"></div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 md:px-6 pb-24 -mt-16">
+        <div class="max-w-5xl mx-auto">
+            <div id="main-content-card" class="content-card p-6 md:p-16 relative overflow-hidden">
+                
+                <!-- Pre-test CTA -->
+                <section class="animated-section mb-28">
+                    <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-1 shadow-2xl shadow-orange-200">
+                        <div class="bg-white rounded-[2.35rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+                            <div class="bg-orange-100 p-8 rounded-[2rem] text-orange-600 flex-shrink-0">
+                                <i data-feather="clipboard" class="w-12 h-12"></i>
+                            </div>
+                            <div class="text-center md:text-left flex-1">
+                                <h2 class="text-3xl font-black mb-3 text-slate-900">พร้อมทดสอบพื้นฐานหรือยัง?</h2>
+                                <p class="text-slate-500 text-lg mb-8 leading-relaxed">ใช้เวลาเพียง 2 นาที เพื่อประเมินความรู้เบื้องต้นก่อนเข้าสู่เนื้อหาเข้มข้น</p>
+                                <button onclick="openQuiz('pre')" class="w-full md:w-auto bg-orange-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-orange-100 hover:bg-orange-700 transition-all transform hover:scale-105 active:scale-95">
+                                    เริ่มทำแบบทดสอบก่อนเรียน
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div id="readable-area">
+                    <!-- Intro Section -->
+                    <section id="introduction" class="animated-section mb-28 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-8">
+                            <div class="h-1.5 w-16 bg-indigo-600 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">Introduction</h2>
+                        </div>
+                        <div class="prose prose-indigo max-w-none text-slate-600 text-xl leading-[1.8] font-medium">
+                            <p>ยินดีต้อนรับเข้าสู่บทเรียนเรื่อง <b>"องค์ประกอบของสื่อดิจิทัล"</b> สื่อดิจิทัลในปัจจุบันไม่ได้ประกอบขึ้นจากความบังเอิญ แต่เกิดจากการนำส่วนประกอบสำคัญ 5 ประการมาผสมผสานกันอย่างลงตัว เพื่อถ่ายทอดข้อมูลและอารมณ์ไปยังผู้รับสารได้อย่างแม่นยำที่สุด</p>
+                        </div>
+                    </section>
+
+                    <div id="lesson-start" class="space-y-32">
+                        <!-- 1. Text -->
+                        <section id="text-section" class="animated-section scroll-mt-32">
+                            <div class="grid md:grid-cols-2 gap-12 items-center">
+                                <div>
+                                    <span class="text-indigo-600 font-black tracking-[0.3em] text-sm mb-4 block uppercase">01. Typography</span>
+                                    <h2 class="text-4xl md:text-5xl font-black mb-8 text-slate-900">ข้อความ (Text)</h2>
+                                    <div class="space-y-6 text-slate-600 text-lg leading-relaxed">
+                                        <p><b>ข้อความ</b> คือองค์ประกอบพื้นฐานที่สำคัญที่สุด ทำหน้าที่บรรยายและสื่อสารรายละเอียดที่ชัดเจน ในสื่อดิจิทัล ข้อความไม่ได้มีเพียงแค่ความหมาย แต่ยังมีความสามารถในการ <b>Interactive</b> เช่น การเป็น Hyperlink หรือการปรับขนาดให้เหมาะสมกับสมาร์ทโฟน</p>
+                                        <div class="bg-slate-50 border-l-4 border-indigo-500 p-6 rounded-r-2xl">
+                                            <h4 class="font-black text-indigo-900 mb-3 flex items-center">
+                                                <i data-feather="link" class="w-4 h-4 mr-2"></i> แหล่งฟอนต์แนะนำ
+                                            </h4>
+                                            <div class="flex flex-wrap gap-2">
+                                                <span class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold shadow-sm">Google Fonts</span>
+                                                <span class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold shadow-sm">ThaiFaces</span>
+                                                <span class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold shadow-sm">DaFont</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -inset-4 bg-indigo-100 rounded-[3rem] transform rotate-3"></div>
+                                    <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&q=80" alt="Text Concept" class="relative rounded-[2.5rem] shadow-2xl w-full h-80 object-cover">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 2. Image -->
+                        <section id="image-section" class="animated-section scroll-mt-32">
+                            <div class="grid md:grid-cols-2 gap-12 items-center">
+                                <div class="md:order-2">
+                                    <span class="text-purple-600 font-black tracking-[0.3em] text-sm mb-4 block uppercase">02. Visuals</span>
+                                    <h2 class="text-4xl md:text-5xl font-black mb-8 text-slate-900">ภาพ (Image)</h2>
+                                    <div class="space-y-6 text-slate-600 text-lg leading-relaxed">
+                                        <p><b>ภาพนิ่ง</b> มีบทบาทสูงกว่าข้อความในแง่การสื่ออารมณ์ เพราะภาพหนึ่งภาพสามารถเข้าใจได้ทันทีโดยไม่ต้องแปลภาษา ประกอบด้วยภาพถ่าย ภาพวาด และ <b>Infographics</b> ซึ่งช่วยสรุปข้อมูลที่ซับซ้อนให้เข้าใจง่ายขึ้นในพริบตา</p>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100 text-center">
+                                                <i data-feather="zap" class="text-purple-600 mb-2 w-6 h-6 mx-auto"></i>
+                                                <p class="font-black text-sm text-purple-900">Infographics</p>
+                                            </div>
+                                            <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100 text-center">
+                                                <i data-feather="cpu" class="text-purple-600 mb-2 w-6 h-6 mx-auto"></i>
+                                                <p class="font-black text-sm text-purple-900">AI Art</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="md:order-1 relative">
+                                    <div class="absolute -inset-4 bg-purple-100 rounded-[3rem] transform -rotate-3"></div>
+                                    <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80" alt="Visuals" class="relative rounded-[2.5rem] shadow-2xl w-full h-80 object-cover">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 3. Audio -->
+                        <section id="audio-section" class="animated-section scroll-mt-32">
+                            <div class="grid md:grid-cols-2 gap-12 items-center">
+                                <div>
+                                    <span class="text-emerald-600 font-black tracking-[0.3em] text-sm mb-4 block uppercase">03. Audio</span>
+                                    <h2 class="text-4xl md:text-5xl font-black mb-8 text-slate-900">เสียง (Audio)</h2>
+                                    <div class="space-y-6 text-slate-600 text-lg leading-relaxed">
+                                        <p>เสียงมีอิทธิพลต่อความรู้สึกของผู้รับสารสูงถึง <b>70%</b> ในสื่อดิจิทัล ไม่ว่าจะเป็นเสียงพากย์บรรยาย ดนตรีประกอบ หรือ Sound Effects ซึ่งช่วยเสริมสร้างบรรยากาศและความน่าติดตามให้กับงานออกแบบ</p>
+                                        <div class="p-6 bg-emerald-50 rounded-3xl border border-emerald-100 flex items-start space-x-4">
+                                            <div class="bg-white p-3 rounded-2xl text-emerald-600 shadow-sm flex-shrink-0">
+                                                <i data-feather="mic" class="w-6 h-6"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-black text-emerald-900">Professional Tool Tip</p>
+                                                <p class="text-sm text-emerald-700">ปัจจุบันมีการใช้ <b>ElevenLabs</b> ในการเจนเสียงพากย์ภาษาไทยที่เนียนเหมือนมนุษย์ที่สุด</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -inset-4 bg-emerald-100 rounded-[3rem] transform rotate-2"></div>
+                                    <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" alt="Audio" class="relative rounded-[2.5rem] shadow-2xl w-full h-80 object-cover">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 4. Video Content Section -->
+                        <section id="video-lesson" class="animated-section scroll-mt-32">
+                            <div class="flex items-center space-x-4 mb-10">
+                                <div class="h-1.5 w-16 bg-red-600 rounded-full"></div>
+                                <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">4. วิดีโออธิบายเนื้อหา</h2>
+                            </div>
+                            <div class="bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl aspect-video relative group border-4 border-slate-100">
+                                <iframe 
+                                    class="w-full h-full" 
+                                    src="ve/2.mp4" 
+                                    title="องค์ประกอบสื่อดิจิทัล" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </section>
+
+                        <!-- 5. Video Element -->
+                        <section id="video-section" class="animated-section scroll-mt-32">
+                            <div class="grid md:grid-cols-2 gap-12 items-center">
+                                <div class="md:order-2">
+                                    <span class="text-red-600 font-black tracking-[0.3em] text-sm mb-4 block uppercase">05. Video Element</span>
+                                    <h2 class="text-4xl md:text-5xl font-black mb-8 text-slate-900">วิดีโอ (Video)</h2>
+                                    <div class="space-y-6 text-slate-600 text-lg leading-relaxed">
+                                        <p>วิดีโอคือราชาแห่งสื่อดิจิทัล เพราะเป็นองค์ประกอบที่รวม <b>ข้อความ ภาพ และเสียง</b> เข้าไว้ด้วยกัน ทำให้ดึงดูดความสนใจได้มากที่สุด สามารถใช้ในการเล่าเรื่อง สาธิต หรือโฆษณาได้อย่างมีพลัง</p>
+                                        <ul class="space-y-4">
+                                            <li class="flex items-center text-slate-700 font-bold bg-red-50 p-4 rounded-2xl"><i data-feather="play-circle" class="w-6 h-6 mr-3 text-red-500"></i> ดึงดูดความสนใจได้รวดเร็ว</li>
+                                            <li class="flex items-center text-slate-700 font-bold bg-red-50 p-4 rounded-2xl"><i data-feather="play-circle" class="w-6 h-6 mr-3 text-red-500"></i> ถ่ายทอดข้อมูลได้ครบถ้วน</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="relative md:order-1">
+                                    <div class="absolute -inset-4 bg-red-100 rounded-[3rem] transform -rotate-2"></div>
+                                    <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&q=80" alt="Video" class="relative rounded-[2.5rem] shadow-2xl w-full h-80 object-cover">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 6. Color & Light -->
+                        <section id="color-section" class="animated-section scroll-mt-32">
+                            <div class="grid md:grid-cols-2 gap-12 items-center">
+                                <div>
+                                    <span class="text-amber-600 font-black tracking-[0.3em] text-sm mb-4 block uppercase">06. Atmosphere</span>
+                                    <h2 class="text-4xl md:text-5xl font-black mb-8 text-slate-900">สีและแสง (Color & Light)</h2>
+                                    <div class="space-y-6 text-slate-600 text-lg leading-relaxed">
+                                        <p>สีช่วยสื่ออารมณ์และสร้างอัตลักษณ์ ส่วนแสงช่วยสร้างมิติและความสมจริง ทั้งสองส่วนนี้ทำงานร่วมกันเพื่อให้วัตถุในสื่อดิจิทัลดูมีความลึก มีชีวิตชีวา และดูเป็นธรรมชาติ</p>
+                                        <div class="grid grid-cols-2 gap-4 text-center">
+                                            <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                                                <p class="text-3xl font-black text-amber-700">Mood</p>
+                                                <p class="text-[10px] font-bold text-amber-600 mt-1 uppercase tracking-widest">Emotional Tone</p>
+                                            </div>
+                                            <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                                                <p class="text-3xl font-black text-amber-700">Depth</p>
+                                                <p class="text-[10px] font-bold text-amber-600 mt-1 uppercase tracking-widest">Visual Dimension</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute -inset-4 bg-amber-100 rounded-[3rem] transform rotate-3"></div>
+                                    <div class="relative h-80 rounded-[2.5rem] shadow-2xl overflow-hidden bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 flex items-center justify-center">
+                                        <i data-feather="sun" class="w-24 h-24 text-white opacity-40 animate-pulse"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Conclusion -->
+                        <section id="conclusion" class="animated-section mb-28">
+                            <div class="bg-slate-900 text-white rounded-[3rem] p-10 md:p-20 text-center relative overflow-hidden">
+                                <div class="absolute top-0 right-0 w-80 h-80 bg-indigo-600/30 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                                <div class="absolute bottom-0 left-0 w-80 h-80 bg-cyan-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+                                <h2 class="text-4xl md:text-5xl font-black mb-6 relative">บทสรุปแห่งการเรียนรู้</h2>
+                                <p class="text-slate-300 text-xl max-w-2xl mx-auto leading-relaxed relative">การเข้าใจความสัมพันธ์ของทั้ง 5 องค์ประกอบนี้ จะทำให้คุณสามารถผลิตสื่อดิจิทัลที่มีคุณภาพ และสื่อสารข้อมูลไปยังกลุ่มเป้าหมายได้อย่างมีประสิทธิภาพสูงสุด</p>
+                            </div>
+                        </section>
+
+                        <!-- 7. เอกสารดาวน์โหลด -->
+                        <section id="section-docs" class="animated-section mb-16 scroll-mt-32">
+                            <div class="flex items-center space-x-4 mb-10">
+                                <div class="h-1.5 w-16 bg-amber-500 rounded-full"></div>
+                                <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">7. เอกสารดาวน์โหลด</h2>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <a href="https://www.mediafire.com/file/3adegbc00mmf27x/2.mp4/file" class="flex items-center p-6 bg-white border-2 border-slate-100 rounded-3xl hover:border-emerald-500 hover:shadow-lg transition-all group">
+                                    <div class="bg-emerald-100 p-4 rounded-2xl text-emerald-600 mr-5 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                        <i data-feather="file-text"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-black text-slate-800">Download Vedio บทที่ 2</h4>
+                                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">mp4</p>
+                                    </div>
+                                    <i data-feather="download" class="text-slate-300 group-hover:text-emerald-600"></i>
+                                </a>
+                                <a href="https://venngage.com/blog/how-to-make-an-infographic-in-5-steps/" class="flex items-center p-6 bg-white border-2 border-slate-100 rounded-3xl hover:border-amber-500 hover:shadow-lg transition-all group">
+                                    <div class="bg-amber-100 p-4 rounded-2xl text-amber-600 mr-5 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                        <i data-feather="image"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-black text-slate-800">อินโฟกราฟิกประเภทสื่อ</h4>
+                                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">JPG</p>
+                                    </div>
+                                    <i data-feather="download" class="text-slate-300 group-hover:text-amber-600"></i>
+                                </a>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Post-test Trigger -->
+                <section class="animated-section mt-28">
+                    <div class="bg-indigo-600 rounded-[3rem] p-12 md:p-20 text-center text-white shadow-2xl shadow-indigo-200 relative overflow-hidden">
+                        <i data-feather="award" class="w-20 h-20 mx-auto mb-8 text-yellow-400"></i>
+                        <h2 class="text-4xl font-black mb-6">เรียนจบแล้ว! มาวัดผลกัน</h2>
+                        <p class="text-indigo-100 text-xl mb-12 max-w-lg mx-auto font-medium">ทดสอบความเข้าใจทั้งหมดจากบทเรียนนี้ด้วยแบบทดสอบชุดสุดท้าย</p>
+                        <button onclick="openQuiz('post')" class="bg-white text-indigo-600 px-16 py-5 rounded-2xl font-black shadow-2xl hover:bg-indigo-50 transition-all transform hover:scale-105 active:scale-95 text-lg">
+                            เริ่มทำแบบทดสอบหลังเรียน
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Navigation Links -->
+                <div class="flex flex-wrap justify-center gap-10 mt-24 pt-10 border-t border-slate-100">
+                    <a href="lesson1.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-indigo-600 transition-colors uppercase tracking-widest text-[10px]">
+                        <i data-feather="chevron-left"></i> <span>บทก่อนหน้า</span>
+                    </a>
+                    <a href="index.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-indigo-600 transition-colors uppercase tracking-widest text-[10px]">
+                        <i data-feather="home"></i> <span>หน้าแรก</span>
+                    </a>
+                    <a href="lesson3.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-indigo-600 transition-colors uppercase tracking-widest text-[10px]">
+                        <span>บทเรียนถัดไป</span> <i data-feather="chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-500 py-20 px-6 border-t border-slate-800">
+        <div class="container mx-auto text-center">
+            <div class="flex items-center justify-center space-x-2 text-white font-black text-xl mb-10 opacity-50">
+                <i data-feather="monitor"></i>
+                <span>เว็บไซต์ ศึกษาการออกแบบสื่อดิจิทัล</span>
+            </div>
+            <p class="text-sm tracking-widest uppercase mb-4">&copy; 2026 Educational Content Library</p>
+            <div class="flex justify-center space-x-6 text-slate-700">
+                <i data-feather="shield" class="w-5 h-5"></i>
+                <i data-feather="heart" class="w-5 h-5"></i>
+                <i data-feather="globe" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll Top Button -->
+    <button id="scroll-top" class="fixed bottom-8 right-8 bg-white border border-slate-200 text-indigo-600 p-5 rounded-2xl shadow-2xl transition-all scale-0 opacity-0 translate-y-10 z-40 hover:bg-indigo-50 active:scale-90">
+        <i data-feather="arrow-up" class="w-6 h-6"></i>
+    </button>
+
+    <script>
+        feather.replace();
+
+        const quizData = [
+            { q: "ข้อใดคือองค์ประกอบพื้นฐานที่สำคัญที่สุดในการสื่อความหมายเนื้อหา?", options: ["ก. สีและแสง", "ข. ข้อความ", "ค. วิดีโอ", "ง. เสียง"], a: 1 },
+            { q: "ข้อความในสื่อดิจิทัลบนอุปกรณ์พกพาแตกต่างจากสื่อสิ่งพิมพ์อย่างไร?", options: ["ก. อ่านยากกว่า", "ข. มีลักษณะการโต้ตอบ (Interactive) ได้", "ค. ปรับฟอนต์ไม่ได้", "ง. แก้ไขยากกว่า"], a: 1 },
+            { q: "ภาพนิ่งมีบทบาทต่อสื่อดิจิทัลอย่างไรเมื่อเทียบกับข้อความ?", options: ["ก. สำคัญน้อยกว่า", "ข. สื่อความหมายได้ลึกซึ้งและเข้าใจได้สากล", "ค. ใช้พื้นที่น้อยกว่า", "ง. ประมวลผลช้ากว่า"], a: 1 },
+            { q: "แหล่งดาวน์โหลดฟอนต์ภาษาไทยที่ใหญ่ที่สุดแหล่งหนึ่งคืออะไร?", options: ["ก. Pinterest", "ข. ThaiFaces", "ค. Instagram", "ง. TikTok"], a: 1 },
+            { q: "การสรุปข้อมูลปริมาณมากให้เป็นรูปกราฟิกเพื่อให้อ่านง่ายขึ้นเรียกว่า?", options: ["ก. Animation", "ข. Infographics", "ค. AI Render", "ง. Audio Visual"], a: 1 },
+            { q: "เสียงมีบทบาทในการสร้างอารมณ์ร่วมในสื่อดิจิทัลประมาณร้อยละเท่าใด?", options: ["ก. 30%", "ข. 50%", "ค. 70%", "ง. 90%"], a: 2 },
+            { q: "เครื่องมือใดโดดเด่นในการใช้ AI พากย์เสียงภาษาไทยที่สมจริง?", options: ["ก. Google Translate", "ข. ElevenLabs", "ค. Sound Cloud", "ง. CapCut"], a: 1 },
+            { q: "องค์ประกอบใดที่เป็นการรวบรวม ภาพ เสียง และข้อความเข้าด้วยกัน?", options: ["ก. แสง", "ข. วิดีโอ", "ค. กราฟิก", "ง. พื้นหลัง"], a: 1 },
+            { q: "แสง (Light) มีหน้าที่หลักอย่างไรในงานสื่อดิจิทัล?", options: ["ก. ช่วยให้อ่านข้อความง่าย", "ข. ทำให้มองเห็นสี มิติ และความตื้นลึก", "ค. ช่วยเพิ่มความเร็วเว็บ", "ง. ทำให้วิดีโอเล่นต่อเนื่อง"], a: 1 },
+            { q: "ข้อใดคือองค์ประกอบพื้นฐานที่ประกอบขึ้นเป็นสื่อดิจิทัล?", options: ["ก. คอมพิวเตอร์และมือถือ", "ข. ข้อความ ภาพ เสียง วิดีโอ สีและแสง", "ค. อินเทอร์เน็ตและสัญญาณ", "ง. โปรแกรมและแอป"], a: 1 }
+        ];
+
+        let currentQuizType = '';
+        let currentAnswers = Array(10).fill(null);
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 500);
+            }, 800);
+        });
+
+        window.addEventListener('scroll', () => {
+            const scrollTotal = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (window.scrollY / scrollTotal) * 100;
+            document.getElementById('reading-progress').style.width = progress + '%';
+
+            const scrollBtn = document.getElementById('scroll-top');
+            if (window.scrollY > 400) {
+                scrollBtn.classList.replace('opacity-0', 'opacity-100');
+                scrollBtn.classList.replace('scale-0', 'scale-100');
+                scrollBtn.classList.remove('translate-y-10');
+            } else {
+                scrollBtn.classList.replace('opacity-100', 'opacity-0');
+                scrollBtn.classList.replace('scale-100', 'scale-0');
+                scrollBtn.classList.add('translate-y-10');
+            }
+        });
+
+        document.getElementById('scroll-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('is-visible');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.animated-section').forEach(el => observer.observe(el));
+
+        function showAlert(text) {
+            const alertBox = document.getElementById('custom-alert');
+            const alertText = document.getElementById('alert-text');
+            alertText.innerText = text;
+            alertBox.style.display = 'flex';
+            setTimeout(() => alertBox.style.display = 'none', 3000);
+        }
+
+        function openQuiz(type) {
+            currentQuizType = type;
+            currentAnswers = Array(10).fill(null);
+            const modal = document.getElementById('quiz-modal');
+            const title = document.getElementById('quiz-title');
+            const desc = document.getElementById('quiz-desc');
+            const content = document.getElementById('quiz-content');
+            const scoreDisplay = document.getElementById('score-display');
+            const badge = document.getElementById('quiz-badge');
+            const submitBtn = document.getElementById('submit-btn');
+
+            title.innerText = type === 'pre' ? 'แบบทดสอบก่อนเรียน' : 'แบบทดสอบหลังเรียน';
+            desc.innerText = type === 'pre' ? 'ทดสอบความรู้พื้นฐานก่อนเข้าสู่บทเรียนที่ 2' : 'ประเมินผลสัมฤทธิ์ทางการเรียนหลังจากศึกษาเนื้อหาจบแล้ว';
+            badge.innerText = type === 'pre' ? 'Diagnostic Test' : 'Final Assessment';
+
+            scoreDisplay.classList.add('hidden');
+            submitBtn.innerText = 'ส่งคำตอบทั้งหมด';
+            submitBtn.onclick = checkQuiz;
+            submitBtn.disabled = false;
+
+            content.innerHTML = quizData.map((data, i) => `
+                <div class="q-block">
+                    <p class="font-black text-xl mb-6 text-slate-800 leading-tight flex items-start">
+                        <span class="bg-indigo-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm mr-4 flex-shrink-0 mt-0.5">${i+1}</span>
+                        ${data.q}
+                    </p>
+                    <div class="grid gap-4 ml-0 md:ml-12">
+                        ${data.options.map((opt, idx) => `
+                            <button class="quiz-option p-5 rounded-2xl text-left bg-slate-50 hover:bg-white hover:shadow-xl hover:border-indigo-300 font-bold transition-all" 
+                                    onclick="selectOption(${i}, ${idx}, this)">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('<hr class="border-slate-100 my-12">');
+
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            modal.scrollTo(0, 0);
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function selectOption(qIdx, optIdx, btn) {
+            currentAnswers[qIdx] = optIdx;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('button').forEach(b => {
+                b.classList.remove('selected', 'bg-white', 'shadow-xl', 'border-indigo-500');
+            });
+            btn.classList.add('selected', 'bg-white', 'shadow-xl', 'border-indigo-500');
+        }
+
+        function checkQuiz() {
+            const unanswered = currentAnswers.filter(a => a === null).length;
+            if (unanswered > 0) {
+                showAlert(`กรุณาตอบคำถามให้ครบทุกข้อก่อนครับ (เหลืออีก ${unanswered} ข้อ)`);
+                return;
+            }
+
+            let score = 0;
+            const qBlocks = document.querySelectorAll('.q-block');
+            qBlocks.forEach((block, i) => {
+                const options = block.querySelectorAll('button');
+                const correctIdx = quizData[i].a;
+                const userIdx = currentAnswers[i];
+                
+                options.forEach((opt, idx) => {
+                    opt.disabled = true;
+                    if (idx === correctIdx) {
+                        opt.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+                        opt.innerHTML += ' <i data-feather="check-circle" class="inline w-4 h-4 ml-2"></i>';
+                    } else if (idx === userIdx) {
+                        opt.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+                        opt.innerHTML += ' <i data-feather="x-circle" class="inline w-4 h-4 ml-2"></i>';
+                    }
+                });
+                if (userIdx === correctIdx) score++;
+            });
+            
+            feather.replace();
+
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerText = `SCORE: ${score} / 10`;
+            scoreDisplay.classList.remove('hidden');
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerText = 'ปิดหน้าต่าง';
+            submitBtn.onclick = closeQuiz;
+            document.getElementById('quiz-modal').scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (currentQuizType === 'post' && score >= 8) {
+                localStorage.setItem('lesson2_completed', 'true');
+                const msg = document.createElement('div');
+                msg.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-8 py-4 rounded-xl shadow-2xl z-[2000] font-bold text-center";
+                msg.innerHTML = "ยินดีด้วย! คุณผ่านบทเรียนนี้แล้ว<br/><span class='font-normal text-sm'>ความคืบหน้าของคุณถูกบันทึกแล้ว</span>";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 4000);
+            }
+        }
+
+        // Smart TTS Logic
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsIcon = document.getElementById('tts-icon');
+        const ttsStatus = document.getElementById('tts-status');
+        const ttsBg = document.getElementById('tts-play-bg');
+        let synth = window.speechSynthesis;
+        let isReading = false;
+
+        window.addEventListener('beforeunload', () => { if (synth) synth.cancel(); });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isReading) { synth.cancel(); stopTTS(); }
+        });
+
+        ttsBtn.addEventListener('click', () => {
+            if (isReading) { synth.cancel(); stopTTS(); } 
+            else { startTTS(); }
+        });
+
+        function startTTS() {
+            synth.cancel();
+            const content = document.getElementById('readable-area').innerText;
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.lang = 'th-TH';
+            utterance.rate = 1.0;
+            utterance.onstart = () => {
+                isReading = true;
+                ttsBtn.classList.add('is-reading');
+                ttsBg.classList.replace('bg-indigo-600', 'bg-red-500');
+                ttsStatus.innerText = "กำลังอ่าน...";
+                ttsStatus.classList.add('text-red-600');
+                ttsIcon.setAttribute('data-feather', 'square');
+                feather.replace();
+            };
+            utterance.onend = () => stopTTS();
+            utterance.onerror = () => stopTTS();
+            synth.speak(utterance);
+        }
+
+        function stopTTS() {
+            isReading = false;
+            ttsBtn.classList.remove('is-reading');
+            ttsBg.classList.replace('bg-red-500', 'bg-indigo-600');
+            ttsStatus.innerText = "ฟังเนื้อหา";
+            ttsStatus.classList.remove('text-red-600');
+            ttsIcon.setAttribute('data-feather', 'volume-2');
+            feather.replace();
+        }
+    </script>
+</body>
+</html>

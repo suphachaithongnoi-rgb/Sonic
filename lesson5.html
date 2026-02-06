@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บทที่ 5: การออกแบบเชิงสร้างสรรค์ </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f2f5;
+            font-size: 1.125rem;
+            line-height: 1.75;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        .hero-bg {
+            background: linear-gradient(45deg, #1d4ed8, #4f46e5, #6b21a8);
+            background-size: 200% 200%;
+            animation: gradient-animation 15s ease infinite;
+        }
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .animated-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .content-box {
+             background-color: #ffffff;
+             border-radius: 1.5rem;
+             padding: 1.5rem;
+             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+             margin-bottom: 1.5rem;
+             transition: all 0.3s ease-in-out;
+             overflow: hidden;
+        }
+        .content-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        /* Quiz Modal Styles */
+        .quiz-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .quiz-option {
+            transition: all 0.2s;
+            border: 2px solid #f1f5f9;
+        }
+        .quiz-option.selected {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+            font-weight: bold;
+        }
+
+        /* Reading Progress */
+        .progress-bar {
+            height: 4px;
+            background: linear-gradient(to right, #4f46e5, #06b6d4);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            transition: width 0.2s;
+        }
+
+        /* Sound Wave Animation */
+        .sound-bar {
+            width: 3px;
+            height: 12px;
+            background-color: #4f46e5;
+            border-radius: 10px;
+            display: none;
+        }
+        .is-reading .sound-bar {
+            display: block;
+            animation: sound-wave 1s ease-in-out infinite;
+        }
+        .is-reading .sound-bar:nth-child(2) { animation-delay: 0.2s; }
+        .is-reading .sound-bar:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes sound-wave {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .is-reading.glass-btn {
+            background: #eef2ff;
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(79, 70, 229, 0.2);
+        }
+
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scroll-mt-20 {
+            scroll-margin-top: 5rem;
+        }
+
+        .footer-link {
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        .footer-link:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+        .social-icon {
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+            padding: 8px;
+            border-radius: 50%;
+            display: inline-flex;
+        }
+        .social-icon:hover {
+            background: #4f46e5;
+            color: white;
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="preloader">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-indigo-600 font-bold animate-pulse">กำลังเตรียมบทเรียนที่ 5...</p>
+        </div>
+    </div>
+
+    <div class="progress-bar" id="reading-progress" style="width: 0%"></div>
+
+    <!-- Quiz Modal -->
+    <div id="quiz-modal" class="quiz-modal overflow-y-auto py-10 px-4">
+        <div class="bg-white max-w-3xl mx-auto rounded-[2.5rem] shadow-2xl p-6 md:p-12 relative">
+            <button onclick="closeQuiz()" class="absolute top-8 right-8 p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
+                <i data-feather="x"></i>
+            </button>
+            <div id="quiz-header" class="mb-10">
+                <span id="quiz-badge" class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold uppercase mb-4">Assessment</span>
+                <h2 id="quiz-title" class="text-3xl font-black mb-2 text-slate-900"></h2>
+                <p id="quiz-desc" class="text-slate-500"></p>
+            </div>
+            <div id="quiz-content" class="space-y-10"></div>
+            <div class="mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div id="score-display" class="hidden text-3xl font-black text-blue-600 order-2 md:order-1 animate-bounce"></div>
+                <button id="submit-btn" onclick="checkQuiz()" class="w-full md:w-auto bg-blue-600 text-white px-12 py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all active:scale-95 order-1 md:order-2">
+                    ส่งคำตอบทั้งหมด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center px-4">
+            <div class="flex items-center space-x-2 text-xl font-bold text-indigo-600">
+                <i data-feather="monitor"></i>
+                <span>Website</span>
+            </div>
+            <div class="hidden md:flex space-x-6 font-medium text-sm font-bold uppercase tracking-widest">
+                <a href="index.html" class="hover:text-indigo-600 transition-colors">หน้าแรก</a>
+                <a href="index.html#lessons" class="text-indigo-600 font-bold">บทเรียน</a>
+                <a href="prepared_by.html" class="hover:text-indigo-600 transition-colors">เกี่ยวกับเรา</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Floating Smart Audio Controller (สไตล์แบบ Fixed ที่คุณต้องการ) -->
+    <div class="fixed bottom-24 left-6 md:left-10 z-50">
+        <button id="tts-btn" class="glass-btn group flex items-center space-x-4 p-2 pr-6 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 shadow-2xl" title="อ่านเนื้อหา">
+            <div class="relative">
+                <div id="tts-play-bg" class="bg-indigo-600 p-3.5 rounded-full text-white shadow-lg group-hover:bg-indigo-700 transition-colors">
+                    <i data-feather="volume-2" id="tts-icon" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="flex flex-col items-start text-left">
+                <div class="flex items-center space-x-1.5 mb-0.5">
+                    <span id="tts-label" class="font-black text-[10px] uppercase tracking-widest text-indigo-600">Smart Voice</span>
+                    <div class="flex items-end space-x-0.5 h-4 w-6 ml-1">
+                        <div class="sound-bar"></div>
+                        <div class="sound-bar"></div>
+                        <div class="sound-bar"></div>
+                    </div>
+                </div>
+                <span id="tts-status" class="font-bold text-sm text-slate-700">ฟังเนื้อหาบทเรียน</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- Header -->
+    <header class="hero-bg text-white">
+        <div class="container mx-auto px-6 py-20 text-center">
+            <p class="text-3xl font-black opacity-90 mb-2">บทที่ 5</p>
+            <h1 class="text-5xl md:text-6xl font-black leading-tight mb-2">การออกแบบเชิงสร้างสรรค์</h1>
+            <p class="text-lg opacity-90 max-w-2xl mx-auto">การใช้งานเครื่องมือ Canva เพื่อการสร้างสรรค์สื่อดิจิทัลอย่างมีประสิทธิภาพ</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12 -mt-16">
+        <div class="max-w-7xl mx-auto">
+            <!-- Main Content Area -->
+            <article class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl relative z-10">
+                
+                <!-- Pre-test CTA -->
+                <section class="animated-section mb-20">
+                    <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] p-1 md:p-1.5 shadow-2xl shadow-indigo-100">
+                        <div class="bg-white rounded-[1.8rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8">
+                            <div class="bg-indigo-50 p-6 rounded-[1.5rem] text-indigo-600">
+                                <i data-feather="clipboard" class="w-10 h-10"></i>
+                            </div>
+                            <div class="text-center md:text-left flex-1">
+                                <h2 class="text-2xl font-black mb-2 text-slate-900">พร้อมใช้งาน Canva หรือยัง?</h2>
+                                <p class="text-slate-500 text-sm mb-6 leading-relaxed">ทดสอบความรู้เบื้องต้นเกี่ยวกับเครื่องมือออกแบบออนไลน์ยอดนิยม</p>
+                                <button onclick="openQuiz('pre')" class="bg-indigo-600 text-white px-8 py-3.5 rounded-xl font-black shadow-xl hover:bg-indigo-700 transition-all transform hover:scale-105 active:scale-95">
+                                    เริ่มทำแบบทดสอบก่อนเรียน
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <div id="readable-area">
+                    <!-- Section 1 -->
+                    <section id="section-1" class="animated-section mb-16 scroll-mt-20">
+                        <h2 class="text-3xl font-bold text-blue-800 mb-6 border-l-4 border-blue-600 pl-4">1. Canva</h2>
+                        <div class="content-box">
+                            <p class="mb-6">การมีเครื่องมือที่เหมาะสมจะช่วยให้กระบวนการออกแบบของคุณรวดเร็วและมีประสิทธิภาพมากขึ้น นี่คือซอฟต์แวร์ยอดนิยมที่นักออกแบบดิจิทัลทั่วโลกเลือกใช้</p>
+                            <img src="img/4.1.png" alt="หน้าจออินเทอร์เฟซของ Canva" onerror="this.src='https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80'" class="rounded-xl shadow-lg mb-8">
+                            
+                            <h3 class="text-2xl font-bold text-blue-800 mt-8 mb-4">ความหมายของ Canva</h3>
+                            <div class="space-y-4 text-gray-700">
+                                <p>Canva คือเครื่องมือสำหรับออกแบบสื่อดิจิทัลออนไลน์ ที่สามารถใช้งานได้ทั้งในคอมพิวเตอร์ และโทรศัพท์มือถือ (Smart Phone) โดยเริ่มต้นใช้งานได้ฟรี มีฟังค์ชันที่สำคัญครบถ้วน ออกแบบง่าย มีเครื่องมือและเท็มเพลต (Template) ให้เลือกใช้งานได้มากมาย หลายเท็มเพลตใน Canva ถูกสร้างมาเพื่อนำไปใช้งานในโซเชียลมีเดีย (Social Media) อื่นๆ ได้อย่างง่ายดาย หรือหากต้องการฟังค์ชันเสริมอื่นๆ ก็สามารถจ่ายเงินเพื่ออัพเกรดระบบได้อีกด้วย</p>
+                                <p>นอกจากนี้ Canva ยังเป็นแอปพลิเคชันสำหรับสร้างสื่อดิจิทัลหลากหลายรูปแบบ เช่น Presentation, Poster, Card, Resume, Certificate, Infographic เป็นต้น ซึ่ง Canva นั้นจะมีเท็มเพลตหรือรูปแบบสำเร็จ รวมถึงขนาดมาตรฐานให้เลือก หรือผู้ใช้สามารถกำหนดขนาดหรือออกแบบสื่อเองจากหน้ากระดาษที่ว่างเปล่าเองได้</p>
+                                <p>Canva เป็นแอปพลิเคชันที่ใช้งานง่าย มาพร้อมกับเท็มเพลตสำเร็จรูปหรือภาพประกอบแบบสำเร็จอย่างหลากหลายที่ท่านสามารถเลือกปรับแต่งได้เอง มีความสวยงาม และสามารถแบ่งปันให้แก่ผู้อื่นได้ แต่อาจมีข้อจำกัดในเรื่องของความละเอียด มิติความตื้นลึกของภาพ รวมไปถึงความคมชัดที่อาจไม่เท่ากับโปรแกรมสำหรับออกแบบหรือแต่งภาพโดยเฉพาะ เช่น Adobe Photoshop, Adobe Illustrator</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Section 2 -->
+                    <section id="section-2" class="animated-section mb-16 scroll-mt-20">
+                        <h2 class="text-3xl font-bold text-purple-800 mb-6 border-l-4 border-purple-600 pl-4">2. ประเภทของการใช้งาน</h2>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="content-box flex flex-col items-center text-center">
+                                <h3 class="font-bold text-purple-700 mb-4">ส่วนตัว (Private) ใช้งานฟรี</h3>
+                                <img src="img/free.jpg" alt="การใช้งานส่วนตัว" onerror="this.src='https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=400&q=80'" class="rounded-lg mb-4 h-40 object-cover">
+                                <p class="text-sm text-gray-600 italic">เริ่มต้นใช้งานได้ทันทีโดยไม่มีค่าใช้จ่าย เหมาะสำหรับการออกแบบทั่วไป</p>
+                            </div>
+                            <div class="content-box flex flex-col items-center text-center">
+                                <h3 class="font-bold text-purple-700 mb-4">การศึกษา (Education)</h3>
+                                <img src="img/ss.jpg" alt="การใช้งานเพื่อการศึกษา" onerror="this.src='https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80'" class="rounded-lg mb-4 h-40 object-cover">
+                                <p class="text-sm text-gray-600 italic">สำหรับคุณครูและนักเรียน เพื่อการสร้างสรรค์สื่อการสอนที่น่าสนใจ</p>
+                            </div>
+                            <div class="content-box flex flex-col items-center text-center">
+                                <h3 class="font-bold text-purple-700 mb-4">ชำระเงิน (Pro)</h3>
+                                <img src="img/mon.jpg" alt="การใช้งานรุ่น Pro" onerror="this.src='https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&q=80'" class="rounded-lg mb-4 h-40 object-cover">
+                                <p class="text-sm text-gray-600 italic">เข้าถึงเครื่องมือขั้นสูง เท็มเพลตพรีเมียม และคลังภาพแบบไม่จำกัด</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 3 -->
+                    <section id="section-3" class="animated-section mb-16 scroll-mt-20">
+                        <h2 class="text-3xl font-bold text-teal-800 mb-6 border-l-4 border-teal-600 pl-4">3. ส่วนประกอบของ Canva</h2>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="content-box bg-teal-50">
+                                <h3 class="font-bold text-teal-800 mb-4 flex items-center font-black"><i data-feather="grid" class="mr-2"></i> ส่วนที่ 1 ส่วนจัดการออกแบบ</h3>
+                                <ul class="space-y-3 text-gray-700">
+                                    <li class="flex items-center"><i data-feather="home" class="w-4 h-4 mr-2 text-teal-600"></i> หน้าหลัก (Home)</li>
+                                    <li class="flex items-center"><i data-feather="folder" class="w-4 h-4 mr-2 text-teal-600"></i> โปรเจ็กต์ (Projects)</li>
+                                    <li class="flex items-center"><i data-feather="layout" class="w-4 h-4 mr-2 text-teal-600"></i> เท็มเพลต (Templates)</li>
+                                    <li class="flex items-center"><i data-feather="box" class="w-4 h-4 mr-2 text-teal-600"></i> แบรนด์ (Brand)</li>
+                                    <li class="flex items-center"><i data-feather="layers" class="w-4 h-4 mr-2 text-teal-600"></i> แอพ (Apps)</li>
+                                    <li class="flex items-center"><i data-feather="briefcase" class="w-4 h-4 mr-2 text-teal-600"></i> งานในห้องเรียน (Classwork)</li>
+                                </ul>
+                            </div>
+                            <div class="content-box bg-blue-50">
+                                <h3 class="font-bold text-blue-800 mb-4 flex items-center font-black"><i data-feather="edit-3" class="mr-2"></i> ส่วนที่ 2 ส่วนงานออกแบบ</h3>
+                                <ul class="space-y-3 text-gray-700">
+                                    <li class="flex items-center"><i data-feather="file-text" class="w-4 h-4 mr-2 text-blue-600"></i> Docs (เอกสาร)</li>
+                                    <li class="flex items-center"><i data-feather="monitor" class="w-4 h-4 mr-2 text-blue-600"></i> พรีเซนเทชั่น (Presentations)</li>
+                                    <li class="flex items-center"><i data-feather="share-2" class="w-4 h-4 mr-2 text-blue-600"></i> โซเชียลมีเดีย (Social media)</li>
+                                    <li class="flex items-center"><i data-feather="video" class="w-4 h-4 mr-2 text-blue-600"></i> วิดีโอ (Videos)</li>
+                                    <li class="flex items-center"><i data-feather="printer" class="w-4 h-4 mr-2 text-blue-600"></i> ผลิตภัณฑ์งานพิมพ์ (Print products)</li>
+                                    <li class="flex items-center"><i data-feather="globe" class="w-4 h-4 mr-2 text-blue-600"></i> เว็บไซต์ (Website)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Video Support Section -->
+                    <section id="video-section" class="animated-section mb-16 scroll-mt-20">
+                        <h2 class="text-3xl font-bold text-indigo-800 mb-4 border-l-4 border-indigo-600 pl-4 flex items-center"><i data-feather="video" class="mr-3"></i>สอนการใช้งาน Canva เบื้องต้น</h2>
+                        <div class="bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl aspect-video relative">
+                            <iframe 
+                                class="w-full h-full" 
+                                src="ve/5.mp4" 
+                                title="Canva Tutorial for Beginners" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </section>
+
+                    <!-- Section 4 -->
+                    <section id="section-4" class="animated-section mb-16 scroll-mt-20">
+                        <h2 class="text-3xl font-bold text-rose-800 mb-6 border-l-4 border-rose-600 pl-4">4. เมนูและเครื่องมือต่าง ๆ</h2>
+                        <div class="content-box">
+                            <p class="mb-6">หลังจากผู้ใช้เลือกรูปแบบออกแบบแล้ว จะปรากฏหน้าจอในการสร้างงานออกแบบขึ้นมา โดยมีเมนู (Menu) และเครื่องมือ (Tools) ต่าง ๆ ดังนี้:</p>
+                            
+                            <div class="grid md:grid-cols-2 gap-4 mb-8">
+                                <ul class="space-y-4">
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>1. ดีไซน์ (Design):</strong> เมนูตัวเลือกสำหรับสร้างรูปแบบ ค้นหาเท็มเพลตที่ต้องการได้
+                                    </li>
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>2. องค์ประกอบ (Elements):</strong> ใส่รูปทรง กรอบรูป กราฟิก และสัญลักษณ์ต่าง ๆ
+                                    </li>
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>3. ข้อความ (Text):</strong> เครื่องมือสำหรับเพิ่มและตกแต่งตัวอักษร
+                                    </li>
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>4. แบรนด์ (Brand):</strong> แสดงโลโก้ สี ตัวอักษร และสไตล์ของแบรนด์ที่ตั้งค่าไว้
+                                    </li>
+                                </ul>
+                                <ul class="space-y-4">
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>5. อัพโหลด (Upload):</strong> อัพโหลดรูปภาพ วิดีโอ เสียง จากเครื่องคอมพิวเตอร์
+                                    </li>
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>6. วาด (Draw):</strong> เครื่องมือที่ช่วยในการเขียนหรือวาดรูปภาพได้อย่างอิสระ
+                                    </li>
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>7. โปรเจ็กต์ (Projects):</strong> ชิ้นงานต่าง ๆ ที่ได้ทำไว้แล้ว สามารถเปิดดูหรือแก้ไขได้
+                                    </li>
+                                    <li class="bg-gray-50 p-4 rounded-lg border-l-4 border-rose-500">
+                                        <strong>8. แอพ (Apps):</strong> แอพพลิเคชันเสริม เช่น ชาร์ต ภาพถ่าย และการแปลภาษา
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-rose-50 p-8 rounded-2xl border border-rose-100 shadow-inner">
+                                <h3 class="text-xl font-bold text-rose-800 mb-4 flex items-center font-black">
+                                    <i data-feather="cpu" class="mr-2"></i> Magic Media (AI)
+                                </h3>
+                                <p class="text-gray-700">เครื่องมือที่อยู่ในเมนูแอพ ที่ใช้ AI ช่วยในการออกแบบเชิงสร้างสรรค์ เช่น <b>Magic Media</b> ซึ่งจะมีเครื่องมือ <b>Text to Image</b> ที่สามารถแปลงข้อความให้กลายเป็นรูปภาพตามที่คุณต้องการได้อย่างมหัศจรรย์ พร้อมรูปประกอบเนื้อหาที่ครบถ้วน</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Download Documents -->
+                    <section id="docs-section" class="animated-section mb-8 scroll-mt-20">
+                        <h2 class="text-3xl font-bold text-amber-800 mb-6 border-l-4 border-amber-600 pl-4 flex items-center font-black"><i data-feather="download-cloud" class="mr-3"></i>เอกสารประกอบการเรียน</h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <a href="https://www.mediafire.com/file/nekk8u3nxojb7by/5.mp4/file" class="flex items-center p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-blue-500 hover:shadow-lg transition-all group">
+                                <div class="bg-blue-100 p-4 rounded-xl text-blue-600 mr-5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <i data-feather="file-text"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-black text-slate-800">Download Vedio บทที่ 5</h4>
+                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">mp4</p>
+                                </div>
+                                <i data-feather="download" class="text-slate-300 group-hover:text-blue-600"></i>
+                            </a>
+                            <a href="https://www.linearity.io/blog/infographic-examples/" class="flex items-center p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-rose-500 hover:shadow-lg transition-all group">
+                                <div class="bg-rose-100 p-4 rounded-xl text-rose-600 mr-5 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                                    <i data-feather="image"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-black text-slate-800">อินโฟกราฟิกประเภทสื่อ</h4>
+                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">JPG</p>
+                                </div>
+                                <i data-feather="download" class="text-slate-300 group-hover:text-rose-600"></i>
+                            </a>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Post-test Trigger -->
+                <section class="animated-section mt-12">
+                    <div class="bg-indigo-600 rounded-[2rem] p-10 text-center text-white shadow-2xl shadow-indigo-100">
+                        <i data-feather="award" class="w-14 h-14 mx-auto mb-4"></i>
+                        <h2 class="text-3xl font-black mb-2">บทสรุปบทที่ 5</h2>
+                        <p class="text-indigo-100 text-lg mb-8 max-w-lg mx-auto">วัดผลความเข้าใจเกี่ยวกับการออกแบบเชิงสร้างสรรค์ด้วย Canva ด้วยแบบทดสอบหลังเรียน</p>
+                        <button onclick="openQuiz('post')" class="bg-white text-indigo-600 px-10 py-3.5 rounded-xl font-black shadow-xl hover:bg-indigo-50 transition-all transform hover:scale-105 active:scale-95">
+                            เริ่มทำแบบทดสอบหลังเรียน
+                        </button>
+                    </div>
+                </section>
+
+               
+                <!-- Navigation -->
+                <div class="flex flex-wrap justify-center gap-10 mt-20 pt-10 border-t border-slate-100">
+                    <a href="lesson4.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-blue-600 transition-colors uppercase tracking-widest text-xs">
+                        <i data-feather="chevron-left"></i> <span>บทก่อนหน้า</span>
+                    </a>
+                    <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+                    <a href="index.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-blue-600 transition-colors uppercase tracking-widest text-xs">
+                        <i data-feather="home"></i> <span>หน้าแรก</span>
+                    </a>
+                    <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+                    <a href="lesson6.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-blue-600 transition-colors uppercase tracking-widest text-xs">
+                        <span>บทเรียนถัดไป</span> <i data-feather="chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+     <!-- Footer Slate-900 -->
+    <footer class="bg-slate-900 text-slate-500 py-20 px-6 border-t border-slate-800">
+        <div class="container mx-auto text-center">
+            <div class="flex items-center justify-center space-x-2 text-white font-black text-xl mb-10 opacity-50">
+                <i data-feather="monitor"></i>
+                <span>เว็บไซต์ ศึกษาการออกแบบสื่อดิจิทัล</span>
+            </div>
+            <p class="text-sm tracking-widest uppercase mb-4">&copy; 2026 Educational Content Library</p>
+            <div class="flex justify-center space-x-6 text-slate-700">
+                <i data-feather="shield" class="w-5 h-5"></i>
+                <i data-feather="heart" class="w-5 h-5"></i>
+                <i data-feather="globe" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll-to-Top Button -->
+    <button id="scrollToTopBtn" class="fixed bottom-8 right-8 bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform scale-0 invisible opacity-0 z-50">
+        <i data-feather="arrow-up" class="w-6 h-6"></i>
+    </button>
+
+    <script>
+        // Init Icons
+        feather.replace();
+
+        // Quiz Data สำหรับบทที่ 5 (Canva)
+        const quizData = [
+            { q: "Canva คืออะไร?", options: ["ก. โปรแกรมตัดต่อวิดีโอออฟไลน์", "ข. เครื่องมือออกแบบสื่อดิจิทัลออนไลน์", "ค. ระบบปฏิบัติการคอมพิวเตอร์", "ง. เว็บไซต์สำหรับดูหนัง"], a: 1 },
+            { q: "Canva สามารถใช้งานผ่านอุปกรณ์ใดได้บ้าง?", options: ["ก. คอมพิวเตอร์เท่านั้น", "ข. โทรศัพท์มือถือเท่านั้น", "ค. ทั้งคอมพิวเตอร์และโทรศัพท์มือถือ", "ง. โทรทัศน์เท่านั้น"], a: 2 },
+            { q: "ข้อใดคือข้อดีของการใช้ Canva เมื่อเทียบกับโปรแกรมระดับโปร?", options: ["ก. มีความละเอียดภาพสูงกว่า", "ข. ใช้งานง่าย มีเท็มเพลตสำเร็จรูปหลากหลาย", "ค. สร้างมิติภาพได้ลึกกว่า", "ง. ติดตั้งยากกว่า"], a: 1 },
+            { q: "การใช้งานประเภทใดที่เหมาะสำหรับคุณครูและนักเรียน?", options: ["ก. Private (ส่วนตัว)", "ข. Pro (ชำระเงิน)", "ค. Education (การศึกษา)", "ง. Enterprise (องค์กร)"], a: 2 },
+            { q: "เมนู 'โปรเจ็กต์ (Projects)' ทำหน้าที่อะไร?", options: ["ก. ดาวน์โหลดแอปพลิเคชัน", "ข. จัดเก็บชิ้นงานที่เคยออกแบบไว้", "ค. เลือกสีแบรนด์", "ง. แชทกับทีมงาน"], a: 1 },
+            { q: "หากต้องการใส่รูปทรง กรอบรูป หรือกราฟิก ต้องไปที่เมนูใด?", options: ["ก. ดีไซน์", "ข. ข้อความ", "ค. องค์ประกอบ (Elements)", "ง. อัพโหลด"], a: 2 },
+            { q: "เมนู 'อัพโหลด (Upload)' ใช้สำหรับทำอะไร?", options: ["ก. การเปลี่ยนสีพื้นหลัง", "ข. นำรูปภาพหรือวิดีโอจากเครื่องเข้าสู่ Canva", "ค. การพิมพ์งานออกทางเครื่องพิมพ์", "ง. การสร้างบัญชีผู้ใช้ใหม่"], a: 1 },
+            { q: "Magic Media ใน Canva คือเครื่องมืออะไร?", options: ["ก. เครื่องมือลบพื้นหลัง", "ข. AI แปลงข้อความเป็นรูปภาพ", "ค. เครื่องมือตัดต่อเสียง", "ง. ระบบตรวจสอบลิขสิทธิ์"], a: 1 },
+            { q: "ส่วนใดในหน้าหลักที่รวบรวมรูปแบบงาน เช่น พรีเซนเทชั่น และ วิดีโอ?", options: ["ก. ส่วนจัดการออกแบบ", "ข. ส่วนงานออกแบบ (ส่วนที่ 2)", "ค. เมนูการตั้งค่า", "ง. แถบแจ้งเตือน"], a: 1 },
+            { q: "Canva รุ่น Pro ให้สิทธิประโยชน์อะไรบ้าง?", options: ["ก. ใช้งานฟรีตลอดชีพ", "ข. เข้าถึงเท็มเพลตและคลังภาพพรีเมียม", "ค. ปิดโฆษณาบน YouTube", "ง. เพิ่มความเร็วอินเทอร์เน็ต"], a: 1 }
+        ];
+
+        let currentQuizType = '';
+        let currentAnswers = Array(10).fill(null);
+
+        // Preloader Logic
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                preloader.style.opacity = '0';
+                setTimeout(() => preloader.style.display = 'none', 500);
+            }, 1000);
+        });
+
+        // Reading Progress & Scroll to Top
+        const scrollBtn = document.getElementById('scrollToTopBtn');
+        window.addEventListener('scroll', () => {
+            const progress = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+            document.getElementById('reading-progress').style.width = progress + '%';
+
+            if (window.scrollY > 300) {
+                scrollBtn.classList.remove('invisible', 'opacity-0', 'scale-0');
+                scrollBtn.classList.add('visible', 'opacity-100', 'scale-100');
+            } else {
+                scrollBtn.classList.add('invisible', 'opacity-0', 'scale-0');
+                scrollBtn.classList.remove('visible', 'opacity-100', 'scale-100');
+            }
+        });
+
+        scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+        // Animation Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('is-visible');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.animated-section').forEach(el => observer.observe(el));
+
+        // Quiz Logic
+        function openQuiz(type) {
+            currentQuizType = type;
+            currentAnswers = Array(10).fill(null);
+            const modal = document.getElementById('quiz-modal');
+            const title = document.getElementById('quiz-title');
+            const desc = document.getElementById('quiz-desc');
+            const content = document.getElementById('quiz-content');
+            const scoreDisplay = document.getElementById('score-display');
+            const badge = document.getElementById('quiz-badge');
+            const submitBtn = document.getElementById('submit-btn');
+
+            title.innerText = type === 'pre' ? 'แบบทดสอบก่อนเรียน' : 'แบบทดสอบหลังเรียน';
+            desc.innerText = type === 'pre' ? 'ทดสอบความรู้พื้นฐานเกี่ยวกับการออกแบบด้วย Canva' : 'ประเมินผลสัมฤทธิ์ทางการเรียนหลังจากศึกษาบทที่ 5 เรียบร้อยแล้ว';
+            badge.innerText = type === 'pre' ? 'Diagnostic Test' : 'Final Assessment';
+
+            scoreDisplay.classList.add('hidden');
+            submitBtn.innerText = 'ส่งคำตอบทั้งหมด';
+            submitBtn.onclick = checkQuiz;
+            submitBtn.disabled = false;
+
+            content.innerHTML = quizData.map((data, i) => `
+                <div class="q-block">
+                    <p class="font-black text-xl mb-6 text-slate-800 leading-tight">${i+1}. ${data.q}</p>
+                    <div class="grid gap-3">
+                        ${data.options.map((opt, idx) => `
+                            <button class="quiz-option p-4 rounded-xl text-left bg-slate-50 hover:bg-white hover:shadow-lg hover:border-blue-300 font-bold transition-all" 
+                                    onclick="selectOption(${i}, ${idx}, this)">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('<hr class="border-slate-100 my-10">');
+
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function selectOption(qIdx, optIdx, btn) {
+            currentAnswers[qIdx] = optIdx;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('button').forEach(b => b.classList.remove('selected', 'bg-white', 'shadow-lg', 'border-blue-500'));
+            btn.classList.add('selected', 'bg-white', 'shadow-lg', 'border-blue-500');
+        }
+
+        function checkQuiz() {
+            const unanswered = currentAnswers.filter(a => a === null).length;
+            if (unanswered > 0) {
+                const msg = document.createElement('div');
+                msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl z-[2000] font-bold";
+                msg.innerText = `กรุณาตอบคำถามให้ครบทุกข้อก่อนครับ (เหลืออีก ${unanswered} ข้อ)`;
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 3000);
+                return;
+            }
+
+            let score = 0;
+            const qBlocks = document.querySelectorAll('.q-block');
+            qBlocks.forEach((block, i) => {
+                const options = block.querySelectorAll('button');
+                const correctIdx = quizData[i].a;
+                const userIdx = currentAnswers[i];
+                options.forEach((opt, idx) => {
+                    opt.disabled = true;
+                    if (idx === correctIdx) opt.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+                    else if (idx === userIdx) opt.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+                });
+                if (userIdx === correctIdx) score++;
+            });
+
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerText = `คะแนนของคุณ: ${score} / 10`;
+            scoreDisplay.classList.remove('hidden');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerText = 'ปิดหน้าต่าง';
+            submitBtn.onclick = closeQuiz;
+
+            if (currentQuizType === 'post' && score >= 8) {
+                localStorage.setItem('lesson5_completed', 'true');
+                const msg = document.createElement('div');
+                msg.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-8 py-4 rounded-xl shadow-2xl z-[2000] font-bold text-center";
+                msg.innerHTML = "ยินดีด้วย! คุณผ่านบทเรียนนี้แล้ว<br/><span class='font-normal text-sm'>ความคืบหน้าของคุณถูกบันทึกแล้ว</span>";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 4000);
+            }
+        }
+
+        // Smart TTS Logic with Auto-Stop Fix
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsIcon = document.getElementById('tts-icon');
+        const ttsStatus = document.getElementById('tts-status');
+        const ttsBg = document.getElementById('tts-play-bg');
+        let synth = window.speechSynthesis;
+        let isReading = false;
+
+        window.addEventListener('beforeunload', () => { if (synth) synth.cancel(); });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isReading) { synth.cancel(); stopTTS(); }
+        });
+
+        ttsBtn.addEventListener('click', () => {
+            if (isReading) { synth.cancel(); stopTTS(); }
+            else { startTTS(); }
+        });
+
+        function startTTS() {
+            const content = document.getElementById('readable-area').innerText;
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.lang = 'th-TH';
+            utterance.rate = 1.0;
+
+            utterance.onstart = () => {
+                isReading = true;
+                ttsBtn.classList.add('is-reading');
+                ttsBg.classList.replace('bg-indigo-600', 'bg-slate-800');
+                ttsStatus.innerText = "กำลังอ่านเนื้อหา...";
+                ttsStatus.classList.add('text-red-600');
+                ttsIcon.setAttribute('data-feather', 'square');
+                feather.replace();
+            };
+
+            utterance.onend = () => stopTTS();
+            synth.speak(utterance);
+        }
+
+        function stopTTS() {
+            isReading = false;
+            ttsBtn.classList.remove('is-reading');
+            ttsBg.classList.replace('bg-slate-800', 'bg-indigo-600');
+            ttsStatus.innerText = "ฟังเนื้อหาบทเรียน";
+            ttsStatus.classList.remove('text-red-600');
+            ttsIcon.setAttribute('data-feather', 'volume-2');
+            feather.replace();
+        }
+    </script>
+</body>
+</html>

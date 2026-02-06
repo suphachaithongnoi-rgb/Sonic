@@ -1,0 +1,267 @@
+/* ---
+Final Modern Redesign for Gemini Learning Website (v6 - Polished & Interactive)
+Date: 2024-03-16
+--- */
+
+/* 1. FONT IMPORTS */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap');
+
+/* 2. ROOT VARIABLES */
+:root {
+    --primary-color: #8B5CF6; /* A slightly lighter, more vibrant purple */
+    --primary-hover: #A78BFA;
+    --primary-glow: rgba(139, 92, 246, 0.4);
+    --secondary-color: #64748B; /* A slightly darker cool gray for secondary text */
+    --text-color: #475569; /* Darker text for better contrast on light background */
+    --heading-color: #1A202C; /* Darker heading color for prominence */
+    --bg-color: #F8FAFC; /* A very light, almost white background */
+    --card-bg: #FFFFFF; /* White for cards */
+    --border-color: #E2E8F0;
+    --pane-bg: rgba(255, 255, 255, 0.7); /* Slightly more opaque for readability */
+    --backdrop-blur: 16px;
+}
+
+/* 3. GENERAL BODY & TYPOGRAPHY */
+body {
+    font-family: 'Sarabun', sans-serif;
+    color: var(--text-color);
+    line-height: 1.7;
+    font-size: 16px;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: url('wwpp.jpg') center center/cover no-repeat fixed;
+    z-index: -2;
+    opacity: 0.7; /* Increased opacity for clearer background image */
+    transform: scale(1.05); /* Slightly zoom in to avoid hard edges */
+}
+
+
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Prompt', sans-serif;
+    color: var(--heading-color);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+/* 4. MAIN LAYOUT & SECTIONS */
+.container {
+    max-width: 1200px;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 0 1rem;
+}
+
+.section-header h2 {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.section-header p {
+    font-size: 1.25rem;
+    color: var(--secondary-color);
+    max-w-3xl;
+    margin: 0.5rem auto 0;
+}
+
+/* 5. HERO SECTION */
+#hero {
+    position: relative;
+    overflow: hidden;
+}
+
+#hero h1 {
+    text-shadow: 0 4px 20px rgba(255, 255, 255, 0.5);
+}
+
+.hero-button {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    padding: 0.75rem 2rem;
+    border-radius: 9999px;
+    font-size: 1.125rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px var(--primary-glow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-button:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+    box-shadow: 0 0 30px var(--primary-glow);
+}
+
+/* 6. CORE CONCEPT & CHAPTER CARDS */
+.core-concept-card, .chapter-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.core-concept-card:before, .chapter-card:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(80% 80% at 50% 50%, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+    pointer-events: none;
+}
+
+.core-concept-card:hover, .chapter-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 20px var(--primary-glow);
+}
+
+.core-concept-card:hover:before, .chapter-card:hover:before {
+    opacity: 1;
+}
+
+.core-concept-icon {
+    transition: color 0.3s ease, transform 0.3s ease;
+    color: var(--primary-color); /* Make icon color primary by default */
+}
+
+.core-concept-card:hover .core-concept-icon {
+    transform: scale(1.1);
+}
+
+.chapter-card .completed-badge { 
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.chapter-card .hidden { display: none; }
+
+.card-footer {
+    background-color: transparent;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.card-action-link {
+    font-weight: 600;
+    color: var(--primary-hover);
+    transition: color 0.3s ease, letter-spacing 0.3s ease;
+}
+
+.card-action-link:hover {
+    color: var(--primary-color);
+    letter-spacing: 0.5px;
+}
+
+.lesson-button {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.lesson-button:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+/* 7. SLIDESHOW */
+.swiper-container {
+    overflow: hidden; /* Ensures content fits rounded corners */
+}
+
+.swiper-slide {
+    position: relative; /* For caption positioning */
+}
+
+.swiper-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 20px;
+    text-align: left;
+}
+
+.swiper-caption h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.swiper-caption p {
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.swiper-pagination-bullet-active {
+    background: var(--primary-color) !important;
+}
+
+.swiper-button-next, .swiper-button-prev {
+    color: var(--primary-color) !important;
+    background-color: rgba(255, 255, 255, 0.5); /* Lighter background for buttons */
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50%;
+    backdrop-filter: blur(4px);
+    transition: background-color 0.3s ease;
+}
+
+.swiper-button-next:hover, .swiper-button-prev:hover {
+    background-color: rgba(255, 255, 255, 0.8); /* Lighter hover background */
+}
+
+.swiper-button-next::after, .swiper-button-prev::after {
+    font-size: 1.5rem !important;
+    font-weight: 800;
+}
+
+
+/* --- ANIMATIONS & PRELOADER --- */
+#preloader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-color); z-index: 9999; display: flex; justify-content: center; align-items: center; opacity: 1; transition: opacity 0.75s ease, visibility 0.75s ease; }
+#preloader.hidden { opacity: 0; visibility: hidden; }
+.spinner { border: 5px solid var(--border-color); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Fade-in animations for sections */
+.fade-in-section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.chapter-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.fade-in-section.is-visible, .chapter-card.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}

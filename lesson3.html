@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บทที่ 3: ความต้องการของผู้ใช้งาน </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        .hero-bg {
+            background: linear-gradient(-45deg, #a8218e, #e5464f, #d81d6e, #4f46e5);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .animated-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .quiz-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .quiz-option {
+            transition: all 0.2s;
+            border: 2px solid #f1f5f9;
+        }
+        .quiz-option.selected {
+            border-color: #e5464f;
+            background-color: #fff1f2;
+            font-weight: bold;
+        }
+        .progress-bar {
+            height: 4px;
+            background: linear-gradient(to right, #e5464f, #a8218e);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            transition: width 0.2s;
+        }
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Sound Wave Animation */
+        .sound-bar {
+            width: 3px;
+            height: 12px;
+            background-color: #e5464f;
+            border-radius: 10px;
+            display: none;
+        }
+        .is-reading .sound-bar {
+            display: block;
+            animation: sound-wave 1s ease-in-out infinite;
+        }
+        .is-reading .sound-bar:nth-child(2) { animation-delay: 0.2s; }
+        .is-reading .sound-bar:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes sound-wave {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+        }
+        .is-reading.glass-btn {
+            background: #fff1f2;
+            border: 1px solid rgba(229, 70, 79, 0.3);
+            box-shadow: 0 10px 30px -5px rgba(229, 70, 79, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+    <div id="preloader">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-rose-600 font-bold animate-pulse">กำลังเตรียมเนื้อหาบทที่ 3...</p>
+        </div>
+    </div>
+
+    <div class="progress-bar" id="reading-progress" style="width: 0%"></div>
+
+    <!-- Modals สำหรับแบบทดสอบ -->
+    <div id="quiz-modal" class="quiz-modal overflow-y-auto py-10 px-4">
+        <div class="bg-white max-w-3xl mx-auto rounded-[2.5rem] shadow-2xl p-6 md:p-12 relative">
+            <button onclick="closeQuiz()" class="absolute top-8 right-8 p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600">
+                <i data-feather="x"></i>
+            </button>
+            <div id="quiz-header" class="mb-10">
+                <span id="quiz-badge" class="inline-block px-4 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold uppercase mb-4">Assessment</span>
+                <h2 id="quiz-title" class="text-3xl font-black mb-2 text-slate-900"></h2>
+                <p id="quiz-desc" class="text-slate-500"></p>
+            </div>
+            <div id="quiz-content" class="space-y-10"></div>
+            <div class="mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div id="score-display" class="hidden text-3xl font-black text-rose-600 order-2 md:order-1 animate-bounce"></div>
+                <button id="submit-btn" onclick="checkQuiz()" class="w-full md:w-auto bg-rose-600 text-white px-12 py-4 rounded-2xl font-bold hover:bg-rose-700 shadow-xl shadow-rose-200 transition-all active:scale-95 order-1 md:order-2">
+                    ส่งคำตอบทั้งหมด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-100">
+        <div class="container mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center space-x-3 text-2xl font-black text-rose-600">
+                <div class="bg-rose-600 p-2 rounded-xl text-white">
+                    <i data-feather="monitor"></i>
+                </div>
+                <span class="tracking-tight">Website</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8 text-sm font-bold uppercase tracking-widest">
+                <a href="index.html" class="text-slate-500 hover:text-rose-600 transition-colors">หน้าแรก</a>
+                <a href="index.html#lessons" class="text-rose-600 transition-colors font-black">บทเรียน</a>
+                <a href="prepared_by.html" class="text-slate-500 hover:text-rose-600 transition-colors">เกี่ยวกับเรา</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero-bg text-white py-28 md:py-36 px-6 overflow-hidden relative text-center">
+        <div class="container mx-auto relative z-10">
+            <span class="inline-block px-8 py-3 bg-white/10 backdrop-blur-lg rounded-full text-xl md:text-2xl font-black tracking-wide mb-10 border border-white/20 shadow-xl">บทที่ 3</span>
+            <h1 class="text-5xl md:text-8xl font-black leading-tight mb-8">ความต้องการของ<br><span class="text-amber-200">ผู้ใช้งาน</span></h1>
+            <p class="text-lg md:text-2xl text-rose-50 max-w-3xl mx-auto font-medium leading-relaxed opacity-90">ทำความเข้าใจแนวคิดเรื่องความต้องการและแรงผลักดัน เพื่อการออกแบบสื่อดิจิทัลที่ตอบโจทย์ผู้ใช้อย่างแท้จริง</p>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-slate-50 to-transparent"></div>
+    </header>
+
+    <main class="container mx-auto px-6 pb-24 -mt-16">
+        <div class="max-w-5xl mx-auto">
+            <div id="main-content-card" class="content-card p-8 md:p-20 relative">
+                
+                <!-- Pre-test CTA -->
+                <section class="animated-section mb-28">
+                    <div class="bg-gradient-to-br from-rose-500 to-pink-600 rounded-[2.5rem] p-1 md:p-1.5 shadow-2xl shadow-rose-200">
+                        <div class="bg-white rounded-[2.3rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+                            <div class="bg-rose-100 p-8 rounded-[2rem] text-rose-600">
+                                <i data-feather="clipboard" class="w-12 h-12"></i>
+                            </div>
+                            <div class="text-center md:text-left flex-1">
+                                <h2 class="text-3xl font-black mb-3 text-slate-900">วัดความเข้าใจพื้นฐาน</h2>
+                                <p class="text-slate-500 text-lg mb-8 leading-relaxed">คุณรู้จักความต้องการของมนุษย์และผู้ใช้งานสื่อดิจิทัลดีแค่ไหน? ลองทำแบบทดสอบก่อนเรียนดูครับ</p>
+                                <button onclick="openQuiz('pre')" class="bg-rose-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-rose-100 hover:bg-rose-700 transition-all transform hover:scale-105 active:scale-95">
+                                    เริ่มทำแบบทดสอบก่อนเรียน
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div id="readable-area">
+                    <!-- 1. ความหมายของความต้องการ -->
+                    <section id="needs" class="animated-section mb-28 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-10">
+                            <div class="h-1.5 w-16 bg-rose-600 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">1. ความหมายของความต้องการ</h2>
+                        </div>
+                        <div class="bg-slate-50 rounded-[2.5rem] p-10 md:p-16 border border-slate-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-8 opacity-5">
+                                <i data-feather="heart" class="w-32 h-32"></i>
+                            </div>
+                            <p class="text-slate-600 text-xl leading-[2] font-medium relative z-10">
+                                <b>ความต้องการ (Needs)</b> หมายถึง ความอยากได้ ใคร่ได้หรือประสงค์จะได้ และเมื่อเกิดความรู้สึกดังกล่าวจะทำให้ร่างกายเกิดการความขาดสมดุล เนื่องมาจากมีสิ่งเร้ามากระตุ้น มีแรงขับภายในเกิดขึ้น ทำให้ร่างกายไม่อาจอยู่นิ่งต้องพยายามดิ้นรนและแสวงหาเพื่อตอบสนองความต้องการนั้น ๆ
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- 2. ลำดับขั้นความต้องการของมาสโลว์ -->
+                    <section id="hierarchy" class="animated-section mb-28 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-10">
+                            <div class="h-1.5 w-16 bg-purple-600 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">2. ลำดับขั้นความต้องการของมาสโลว์</h2>
+                        </div>
+                        <div class="prose prose-slate max-w-none mb-12">
+                            <p class="text-slate-500 text-lg leading-relaxed text-xl">แบบจำลองสำหรับความต้องที่เป็นที่รู้จักคือลำดับขั้นความต้องการของมาสโลว์ (Maslow's Hierarchy of Needs) เกี่ยวกับความต้องการ 5 ระดับดังนี้:</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div class="p-6 bg-purple-50 rounded-[2rem] border border-purple-100 flex flex-col items-center text-center hover:shadow-lg transition-all group">
+                                <span class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center font-black mb-4 shadow-md group-hover:scale-110 transition-transform">1</span>
+                                <p class="font-black text-purple-900 text-sm leading-tight">ความต้องการ<br>ทางกายภาพ</p>
+                                <p class="text-[10px] text-purple-700 mt-2 font-bold uppercase tracking-tighter">Physiological Needs</p>
+                            </div>
+                            <div class="p-6 bg-purple-50 rounded-[2rem] border border-purple-100 flex flex-col items-center text-center hover:shadow-lg transition-all group">
+                                <span class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center font-black mb-4 shadow-md group-hover:scale-110 transition-transform">2</span>
+                                <p class="font-black text-purple-900 text-sm leading-tight">ความมั่นคง<br>ปลอดภัย</p>
+                                <p class="text-[10px] text-purple-700 mt-2 font-bold uppercase tracking-tighter">Safety Needs</p>
+                            </div>
+                            <div class="p-6 bg-purple-50 rounded-[2rem] border border-purple-100 flex flex-col items-center text-center hover:shadow-lg transition-all group">
+                                <span class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center font-black mb-4 shadow-md group-hover:scale-110 transition-transform">3</span>
+                                <p class="font-black text-purple-900 text-sm leading-tight">ความรักและ<br>เจ้าของ</p>
+                                <p class="text-[10px] text-purple-700 mt-2 font-bold uppercase tracking-tighter">Social belonging</p>
+                            </div>
+                            <div class="p-6 bg-purple-50 rounded-[2rem] border border-purple-100 flex flex-col items-center text-center hover:shadow-lg transition-all group">
+                                <span class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center font-black mb-4 shadow-md group-hover:scale-110 transition-transform">4</span>
+                                <p class="font-black text-purple-900 text-sm leading-tight">ความเคารพ<br>นับถือ</p>
+                                <p class="text-[10px] text-purple-700 mt-2 font-bold uppercase tracking-tighter">Self-Esteem</p>
+                            </div>
+                            <div class="p-6 bg-purple-50 rounded-[2rem] border border-purple-100 flex flex-col items-center text-center hover:shadow-lg transition-all group">
+                                <span class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center font-black mb-4 shadow-md group-hover:scale-110 transition-transform">5</span>
+                                <p class="font-black text-purple-900 text-sm leading-tight">ความสมบูรณ์<br>ของชีวิต</p>
+                                <p class="text-[10px] text-purple-700 mt-2 font-bold uppercase tracking-tighter">Self-Actualization</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 3. เครื่องมือในการศึกษา -->
+                    <section id="tools" class="animated-section mb-28 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-10">
+                            <div class="h-1.5 w-16 bg-teal-600 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">3. เครื่องมือในการศึกษาความต้องการ</h2>
+                        </div>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="p-8 bg-white border border-slate-100 rounded-[2rem] text-center shadow-sm hover:shadow-xl transition-all group">
+                                <div class="w-16 h-16 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                    <i data-feather="file-text"></i>
+                                </div>
+                                <h4 class="font-black text-teal-900 mb-2">แบบสอบถาม</h4>
+                                <p class="text-xs text-slate-400 font-bold tracking-widest uppercase">Questionnaire</p>
+                            </div>
+                            <div class="p-8 bg-white border border-slate-100 rounded-[2rem] text-center shadow-sm hover:shadow-xl transition-all group">
+                                <div class="w-16 h-16 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                    <i data-feather="mic"></i>
+                                </div>
+                                <h4 class="font-black text-teal-900 mb-2">การสัมภาษณ์</h4>
+                                <p class="text-xs text-slate-400 font-bold tracking-widest uppercase">Interview</p>
+                            </div>
+                            <div class="p-8 bg-white border border-slate-100 rounded-[2rem] text-center shadow-sm hover:shadow-xl transition-all group">
+                                <div class="w-16 h-16 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                    <i data-feather="eye"></i>
+                                </div>
+                                <h4 class="font-black text-teal-900 mb-2">การสังเกต</h4>
+                                <p class="text-xs text-slate-400 font-bold tracking-widest uppercase">Observation</p>
+                            </div>
+                            <div class="p-8 bg-white border border-slate-100 rounded-[2rem] text-center shadow-sm hover:shadow-xl transition-all group">
+                                <div class="w-16 h-16 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                    <i data-feather="check-square"></i>
+                                </div>
+                                <h4 class="font-black text-teal-900 mb-2">แบบทดสอบ</h4>
+                                <p class="text-xs text-slate-400 font-bold tracking-widest uppercase">Tests</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 4. วิดีโออธิบายเนื้อหา -->
+                    <section id="video-content" class="animated-section mb-28 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-10">
+                            <div class="h-1.5 w-16 bg-indigo-600 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">4. วิดีโออธิบายเนื้อหา</h2>
+                        </div>
+                        <div class="bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl aspect-video relative">
+                            <iframe 
+                                class="w-full h-full" 
+                                src="ve/3.mp4" 
+                                title="User Needs and Psychology" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                        <p class="mt-6 text-center text-slate-500 font-medium italic">คำแนะนำ: รับชมวิดีโอเพื่อทำความเข้าใจพฤติกรรมและความต้องการของผู้ใช้งานในเชิงลึก</p>
+                    </section>
+
+                    <!-- 5. สถิติความต้องการ -->
+                    <section id="statistics" class="animated-section mb-28 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-10">
+                            <div class="h-1.5 w-16 bg-rose-600 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">5. สถิติความต้องการของผู้ใช้</h2>
+                        </div>
+                        <p class="text-slate-600 text-xl mb-10 leading-relaxed">การนำสถิติมาช่วยในการตัดสินใจออกแบบสื่อดิจิทัลให้ตรงกลุ่มเป้าหมาย จากรายงาน <b>2023 Global Digital Report</b> ของประเทศไทย:</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-8 mb-12">
+                            <div class="bg-rose-50 p-8 rounded-[2.5rem] border border-rose-100 text-rose-900">
+                                <h3 class="font-black text-rose-800 text-xl mb-6 flex items-center uppercase tracking-tighter">
+                                    <i data-feather="users" class="mr-3"></i> Thailand Demographics
+                                </h3>
+                                <ul class="space-y-4 font-medium">
+                                    <li class="flex justify-between border-b border-rose-200/50 pb-3 text-sm"><span>ประชากรทั้งหมด</span> <span class="font-black text-rose-900">71.75 ล้านคน</span></li>
+                                    <li class="flex justify-between border-b border-rose-200/50 pb-3 text-sm"><span>ผู้หญิง / ผู้ชาย</span> <span class="font-black text-rose-900">51.5% / 48.5%</span></li>
+                                    <li class="flex justify-between border-b border-rose-200/50 pb-3 text-sm"><span>ค่าเฉลี่ยอายุ</span> <span class="font-black text-rose-900">40.1 ปี</span></li>
+                                    <li class="flex justify-between text-sm"><span>อาศัยในเขตเมือง</span> <span class="font-black text-rose-900">53.2%</span></li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white">
+                                <h3 class="font-black text-amber-400 text-xl mb-6 flex items-center uppercase tracking-tighter">
+                                    <i data-feather="globe" class="mr-3"></i> Internet Usage 2023
+                                </h3>
+                                <ul class="space-y-4 font-medium">
+                                    <li class="flex justify-between border-b border-slate-700 pb-3 text-sm"><span>ผู้ใช้อินเทอร์เน็ต</span> <span class="font-black text-amber-400 text-lg">61.21 ล้านคน</span></li>
+                                    <li class="flex justify-between border-b border-slate-700 pb-3 text-sm"><span>ผู้ใช้โซเชียลมีเดีย</span> <span class="font-black text-amber-400 text-lg">52.25 ล้านคน</span></li>
+                                    <li class="flex justify-between text-sm"><span>การเชื่อมต่อมือถือ</span> <span class="font-black text-amber-400 text-lg">101.2 ล้านครั้ง</span></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="group overflow-hidden rounded-3xl shadow-lg transition-all hover:-translate-y-2">
+                                <img src="img/3.1.jpg" alt="สถิติ 1" class="w-full h-48 object-cover">
+                            </div>
+                            <div class="group overflow-hidden rounded-3xl shadow-lg transition-all hover:-translate-y-2">
+                                <img src="img/3.2.jpg" alt="สถิติ 2" class="w-full h-48 object-cover">
+                            </div>
+                            <div class="group overflow-hidden rounded-3xl shadow-lg transition-all hover:-translate-y-2">
+                                <img src="img/3.3.jpg" alt="สถิติ 3" class="w-full h-48 object-cover">
+                            </div>
+                            <div class="group overflow-hidden rounded-3xl shadow-lg transition-all hover:-translate-y-2">
+                                <img src="img/3.4.jpg" alt="สถิติ 4" class="w-full h-48 object-cover">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 6. เอกสารดาวน์โหลด -->
+                    <section id="docs-section" class="animated-section mb-16 scroll-mt-32">
+                        <div class="flex items-center space-x-4 mb-10">
+                            <div class="h-1.5 w-16 bg-amber-500 rounded-full"></div>
+                            <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight">6. เอกสารดาวน์โหลด</h2>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <a href="https://www.mediafire.com/file/7laajn966dyyuk6/3.mp4/file" class="flex items-center p-6 bg-white border-2 border-slate-100 rounded-3xl hover:border-rose-500 hover:shadow-lg transition-all group">
+                                <div class="bg-rose-100 p-4 rounded-2xl text-rose-600 mr-5 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                                    <i data-feather="file-text"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-black text-slate-800">Download Vedio บทที่ 3</h4>
+                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">mp4</p>
+                                </div>
+                                <i data-feather="download" class="text-slate-300 group-hover:text-rose-600"></i>
+                            </a>
+                            <a href="https://venngage.com/blog/9-types-of-infographic-template/" class="flex items-center p-6 bg-white border-2 border-slate-100 rounded-3xl hover:border-amber-500 hover:shadow-lg transition-all group">
+                                <div class="bg-amber-100 p-4 rounded-2xl text-amber-600 mr-5 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                    <i data-feather="bar-chart-2"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-black text-slate-800">อินโฟกราฟิกประเภทสื่อ</h4>
+                                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">JPG</p>
+                                </div>
+                                <i data-feather="download" class="text-slate-300 group-hover:text-amber-600"></i>
+                            </a>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Post-test Trigger -->
+                <section class="animated-section mt-28">
+                    <div class="bg-rose-600 rounded-[2.5rem] p-12 text-center text-white shadow-2xl shadow-rose-200">
+                        <i data-feather="award" class="w-16 h-16 mx-auto mb-6"></i>
+                        <h2 class="text-3xl font-black mb-4">เรียนจบแล้ว! มาวัดผลกัน</h2>
+                        <p class="text-indigo-100 text-lg mb-10 max-w-lg mx-auto">ทดสอบความเข้าใจทั้งหมดจากบทที่ 3 เพื่อประเมินผลสัมฤทธิ์ทางการเรียนของคุณ</p>
+                        <button onclick="openQuiz('post')" class="bg-white text-rose-600 px-12 py-4 rounded-2xl font-black shadow-xl hover:bg-indigo-50 transition-all transform hover:scale-105 active:scale-95">
+                            เริ่มทำแบบทดสอบหลังเรียน
+                        </button>
+                    </div>
+                </section>
+
+                <div class="flex flex-wrap justify-center gap-10 mt-20 pt-10 border-t border-slate-100">
+                    <a href="lesson2.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-rose-600 transition-colors uppercase tracking-widest text-xs">
+                        <i data-feather="chevron-left"></i> <span>บทก่อนหน้า</span>
+                    </a>
+                    <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+                    <a href="index.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-rose-600 transition-colors uppercase tracking-widest text-xs">
+                        <i data-feather="home"></i> <span>หน้าแรก</span>
+                    </a>
+                    <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+                    <a href="lesson4.html" class="group flex items-center space-x-3 text-slate-400 font-black hover:text-rose-600 transition-colors uppercase tracking-widest text-xs">
+                        <span>บทเรียนถัดไป</span> <i data-feather="chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-500 py-20 px-6 border-t border-slate-800">
+        <div class="container mx-auto text-center">
+            <div class="flex items-center justify-center space-x-2 text-white font-black text-xl mb-10 opacity-50">
+                <i data-feather="monitor"></i>
+                <span>เว็บไซต์ ศึกษาการออกแบบสื่อดิจิทัล</span>
+            </div>
+            <p class="text-sm tracking-widest uppercase mb-4 text-slate-600">&copy; 2026 Educational Content Library. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Smart Voice Controller (Fixed to Bottom Left) -->
+    <div class="fixed bottom-8 left-8 z-40 flex flex-col items-start">
+        <button id="tts-btn" class="glass-btn group flex items-center space-x-4 p-2 pr-6 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 border-rose-100" title="อ่านเนื้อหา">
+            <div class="relative">
+                <div id="tts-play-bg" class="bg-rose-600 p-3.5 rounded-full text-white shadow-lg group-hover:bg-rose-700 transition-colors">
+                    <i data-feather="volume-2" id="tts-icon" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="flex flex-col items-start">
+                <div class="flex items-center space-x-1.5 mb-0.5">
+                    <span id="tts-label" class="font-black text-[10px] uppercase tracking-widest text-rose-600">Smart Voice</span>
+                    <div class="flex items-end space-x-0.5 h-4 w-6 ml-1">
+                        <div class="sound-bar"></div>
+                        <div class="sound-bar"></div>
+                        <div class="sound-bar"></div>
+                    </div>
+                </div>
+                <span id="tts-status" class="font-bold text-sm text-slate-700">ฟังเนื้อหาบทเรียน</span>
+            </div>
+        </button>
+    </div>
+
+    <button id="scroll-top" class="fixed bottom-8 right-8 bg-white border border-slate-200 text-rose-600 p-4 rounded-2xl shadow-2xl transition-all scale-0 opacity-0 translate-y-10 z-40 hover:bg-rose-50">
+        <i data-feather="arrow-up" class="w-6 h-6"></i>
+    </button>
+
+    <script>
+        feather.replace();
+
+        const quizData = [
+            { q: "ข้อใดคือความหมายที่ถูกต้องที่สุดของ 'ความต้องการ' (Needs)?", options: ["ก. การมีเงินเก็บจำนวนมาก", "ข. ความรู้สึกอยากได้ที่เกิดจากสิ่งเร้าและแรงขับภายใน", "ค. การเลียนแบบพฤติกรรมคนรอบข้าง", "ง. ความรู้สึกเบื่อหน่ายในชีวิตประจำวัน"], a: 1 },
+            { q: "ความต้องการขั้นแรก (พื้นฐานที่สุด) ของมาสโลว์คืออะไร?", options: ["ก. ความมั่นคงปลอดภัย", "ข. ความเคารพนับถือ", "ค. ความต้องการทางกายภาพ", "ง. ความสมบูรณ์ของชีวิต"], a: 2 },
+            { q: "ขั้นที่ 2 ของลำดับขั้นความต้องการของมาสโลว์คือข้อใด?", options: ["ก. Safety Needs", "ข. Social belonging", "ค. Self-Esteem", "ง. Physiological Needs"], a: 0 },
+            { q: "ความต้องการ 'ความรักและเจ้าของ' จัดเป็นความต้องการในขั้นที่เท่าไหร่?", options: ["ก. ขั้นที่ 1", "ข. ขั้นที่ 2", "ค. ขั้นที่ 3", "ง. ขั้นที่ 4"], a: 2 },
+            { q: "ขั้นสูงสุดของลำดับขั้นความต้องการของมาสโลว์คืออะไร?", options: ["ก. ความต้องการชื่อเสียง", "ข. ความต้องการทางเพศ", "ค. ความสมบูรณ์ของชีวิต (Self-Actualization)", "ง. ความต้องการความเป็นส่วนตัว"], a: 2 },
+            { q: "เครื่องมือใดที่ช่วยให้ได้ข้อมูลจากการ 'พูดคุยโดยตรง' กับผู้ใช้งาน?", options: ["ก. แบบสอบถาม", "ข. การสัมภาษณ์", "ค. การสังเกต", "ง. แบบทดสอบ"], a: 1 },
+            { q: "จากรายงาน 2023 ประชากรไทยมีประมาณเท่าใด?", options: ["ก. 50.5อ ล้านคน", "ข. 61.2 ล้านคน", "ค. 71.75 ล้านคน", "ง. 101.2 ล้านคน"], a: 2 },
+            { q: "เปอร์เซ็นต์ของผู้ใช้อินเทอร์เน็ตในไทยปี 2566 คือข้อใด?", options: ["ก. 53.2%", "ข. 72.8%", "ค. 85.3%", "ง. 90.1%"], a: 2 },
+            { q: "รายงานสถิติดิจิทัล state of digital อัปเดตข้อมูลล่าสุดเมื่อใด?", options: ["ก. มกราคม 2565", "ข. มกราคม 2566", "ค. มิถุนายน 2566", "ง. ธันวาคม 2566"], a: 1 },
+            { q: "สัดส่วนประชากรผู้หญิงในประเทศไทยตามรายงานปี 2566 คือข้อใด?", options: ["ก. 48.5%", "ข. 50.0%", "ค. 51.5%", "ง. 53.2%"], a: 2 }
+        ];
+
+        let currentQuizType = '';
+        let currentAnswers = Array(10).fill(null);
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                if (preloader) {
+                    preloader.style.opacity = '0';
+                    setTimeout(() => preloader.style.display = 'none', 500);
+                }
+            }, 1000);
+        });
+
+        window.addEventListener('scroll', () => {
+            const progress = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+            document.getElementById('reading-progress').style.width = progress + '%';
+
+            const scrollBtn = document.getElementById('scroll-top');
+            if (window.scrollY > 400) {
+                scrollBtn.classList.replace('opacity-0', 'opacity-100');
+                scrollBtn.classList.replace('scale-0', 'scale-100');
+                scrollBtn.classList.remove('translate-y-10');
+            } else {
+                scrollBtn.classList.replace('opacity-100', 'opacity-0');
+                scrollBtn.classList.replace('scale-100', 'scale-0');
+                scrollBtn.classList.add('translate-y-10');
+            }
+        });
+
+        document.getElementById('scroll-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('is-visible');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.animated-section').forEach(el => observer.observe(el));
+
+        function openQuiz(type) {
+            currentQuizType = type;
+            currentAnswers = Array(10).fill(null);
+            const modal = document.getElementById('quiz-modal');
+            const title = document.getElementById('quiz-title');
+            const desc = document.getElementById('quiz-desc');
+            const content = document.getElementById('quiz-content');
+            const scoreDisplay = document.getElementById('score-display');
+            const badge = document.getElementById('quiz-badge');
+            const submitBtn = document.getElementById('submit-btn');
+
+            title.innerText = type === 'pre' ? 'แบบทดสอบก่อนเรียน' : 'แบบทดสอบหลังเรียน';
+            desc.innerText = type === 'pre' ? 'ทดสอบความรู้พื้นฐานก่อนเข้าสู่บทเรียนที่ 3' : 'ประเมินผลการเรียนรู้หลังจากศึกษาบทที่ 3 เรียบร้อยแล้ว';
+            badge.innerText = type === 'pre' ? 'Diagnostic Test' : 'Final Assessment';
+
+            scoreDisplay.classList.add('hidden');
+            submitBtn.innerText = 'ส่งคำตอบทั้งหมด';
+            submitBtn.onclick = checkQuiz;
+            submitBtn.disabled = false;
+
+            content.innerHTML = quizData.map((data, i) => `
+                <div class="q-block">
+                    <p class="font-black text-xl mb-6 text-slate-800 leading-tight">${i+1}. ${data.q}</p>
+                    <div class="grid gap-3">
+                        ${data.options.map((opt, idx) => `
+                            <button class="quiz-option p-4 rounded-2xl text-left bg-slate-50 hover:bg-white hover:shadow-xl hover:border-rose-300 font-bold transition-all" 
+                                    onclick="selectOption(${i}, ${idx}, this)">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('<hr class="border-slate-100 my-10">');
+
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQuiz() {
+            document.getElementById('quiz-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function selectOption(qIdx, optIdx, btn) {
+            currentAnswers[qIdx] = optIdx;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('button').forEach(b => b.classList.remove('selected', 'bg-white', 'shadow-xl', 'ring-2', 'ring-rose-500'));
+            btn.classList.add('selected', 'bg-white', 'shadow-xl', 'ring-2', 'ring-rose-500');
+        }
+
+        function checkQuiz() {
+            const unanswered = currentAnswers.filter(a => a === null).length;
+            if (unanswered > 0) {
+                const msg = document.createElement('div');
+                msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl z-[2000] font-bold transition-all";
+                msg.innerText = `กรุณาตอบคำถามให้ครบทุกข้อก่อนครับ (เหลืออีก ${unanswered} ข้อ)`;
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 3000);
+                return;
+            }
+
+            let score = 0;
+            const qBlocks = document.querySelectorAll('.q-block');
+            qBlocks.forEach((block, i) => {
+                const options = block.querySelectorAll('button');
+                const correctIdx = quizData[i].a;
+                const userIdx = currentAnswers[i];
+                options.forEach((opt, idx) => {
+                    opt.disabled = true;
+                    if (idx === correctIdx) opt.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+                    else if (idx === userIdx) opt.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+                });
+                if (userIdx === correctIdx) score++;
+            });
+
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerText = `SCORE: ${score} / 10`;
+            scoreDisplay.classList.remove('hidden');
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerText = 'ปิดหน้าต่าง';
+            submitBtn.onclick = closeQuiz;
+
+            if (currentQuizType === 'post' && score >= 8) {
+                localStorage.setItem('lesson3_completed', 'true');
+                const msg = document.createElement('div');
+                msg.className = "fixed top-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-8 py-4 rounded-xl shadow-2xl z-[2000] font-bold text-center";
+                msg.innerHTML = "ยินดีด้วย! คุณผ่านบทเรียนนี้แล้ว<br/><span class='font-normal text-sm'>ความคืบหน้าของคุณถูกบันทึกแล้ว</span>";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 4000);
+            }
+        }
+
+        // --- TTS Logic ---
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsIcon = document.getElementById('tts-icon');
+        const ttsStatus = document.getElementById('tts-status');
+        const ttsBg = document.getElementById('tts-play-bg');
+        let synth = window.speechSynthesis;
+        let isReading = false;
+
+        window.addEventListener('beforeunload', () => { if (synth) synth.cancel(); });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isReading) { synth.cancel(); stopTTS(); }
+        });
+
+        ttsBtn.addEventListener('click', () => {
+            if (isReading) { synth.cancel(); stopTTS(); }
+            else { startTTS(); }
+        });
+
+        function startTTS() {
+            const content = document.getElementById('readable-area').innerText;
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.lang = 'th-TH';
+            utterance.rate = 1.0;
+
+            utterance.onstart = () => {
+                isReading = true;
+                ttsBtn.classList.add('is-reading');
+                ttsBg.classList.replace('bg-rose-600', 'bg-slate-800');
+                ttsStatus.innerText = "กำลังอ่านเนื้อหา...";
+                ttsStatus.classList.add('text-red-600');
+                ttsIcon.setAttribute('data-feather', 'square');
+                feather.replace();
+            };
+
+            utterance.onend = () => stopTTS();
+            synth.speak(utterance);
+        }
+
+        function stopTTS() {
+            isReading = false;
+            ttsBtn.classList.remove('is-reading');
+            ttsBg.classList.replace('bg-slate-800', 'bg-rose-600');
+            ttsStatus.innerText = "ฟังเนื้อหาบทเรียน";
+            ttsStatus.classList.remove('text-red-600');
+            ttsIcon.setAttribute('data-feather', 'volume-2');
+            feather.replace();
+        }
+    </script>
+</body>
+</html>
